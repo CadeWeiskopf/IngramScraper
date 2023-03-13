@@ -23,6 +23,6 @@ for file_name in os.listdir(SECRETS_PATH):
     if os.path.isfile(os.path.join(SECRETS_PATH, file_name)):
         with open(os.path.join(SECRETS_PATH, file_name), 'r') as f:
             file_contents = f.read()
-            print(f"File: {file_name}\nContents:\n{file_contents}\n")
+            print(f"newFilr: {file_name}\nnewContents:\n{file_contents}\n")
 
 driver.quit()

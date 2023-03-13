@@ -1,5 +1,7 @@
 FROM python:3.12.0a6-bullseye
 
+RUN useradd -ms /bin/bash cade
+
 RUN apt-get update && apt-get install -y \
     wget \
     unzip \
@@ -31,5 +33,7 @@ WORKDIR /app
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ /app/
+RUN chown -R cade:cade /app
+USER cade
 
 CMD ["python", "ingram_scraper.py"]
