@@ -1,9 +1,15 @@
 version: "3.9"
 services:
-  ingrame_scraper_service:
+  ingram_py_scraper_service:
     image: ingram_scraper
     secrets:
-      - my_secret
+      - url
+      - email
+      - password
 secrets:
-  my_secret:
+  url:
+    external: true
+  email:
+    external: true
+  password:
     external: true
