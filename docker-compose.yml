@@ -1,0 +1,9 @@
+version: "3.9"
+services:
+  my_service:
+    image: my_image:latest
+    secrets:
+      - my_secret
+secrets:
+  my_secret:
+    external: true

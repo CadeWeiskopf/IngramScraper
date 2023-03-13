@@ -16,5 +16,13 @@ driver = webdriver.Chrome(service=chrome_driver_service, options=chrome_options)
 
 # scrape
 print('do scrape')
+print('secrets'+str(os.listdir('/run/secrets/')))
+SECRETS_PATH = '/run/secrets/'
+# iterate over files in the directory
+for file_name in os.listdir(SECRETS_PATH):
+    if os.path.isfile(os.path.join(SECRETS_PATH, file_name)):
+        with open(os.path.join(SECRETS_PATH, file_name), 'r') as f:
+            file_contents = f.read()
+            print(f"File: {file_name}\nContents:\n{file_contents}\n")
 
 driver.quit()
