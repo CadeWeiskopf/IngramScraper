@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   my_service:
-    image: my_image:latest
+    image: ingram_scraper
     secrets:
       - my_secret
 secrets:
