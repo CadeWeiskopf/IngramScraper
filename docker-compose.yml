@@ -8,6 +8,11 @@ services:
       - post_url
       - email
       - password
+      - token_key
+      - token_secret
+      - consumer_key
+      - consumer_secret
+      - restlet_url
 secrets:
   origin:
     external: true
@@ -18,4 +23,14 @@ secrets:
   email:
     external: true
   password:
+    external: true
+  token_key:
+    external: true
+  token_secret:
+    external: true
+  consumer_key:
+    external: true
+  consumer_secret:
+    external: true
+  restlet_url:
     external: true

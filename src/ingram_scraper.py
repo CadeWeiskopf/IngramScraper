@@ -24,6 +24,16 @@ with open(os.path.join(SECRETS_PATH, 'email'), 'r') as email_file:
     email = email_file.read().strip()
 with open(os.path.join(SECRETS_PATH, 'password'), 'r') as password_file:
     password = password_file.read().strip()
+with open(os.path.join(SECRETS_PATH, 'token_key'), 'r') as token_key_file:
+    token_key = token_key_file.read().strip()
+with open(os.path.join(SECRETS_PATH, 'token_secret'), 'r') as token_secret_file:
+    token_secret = token_secret_file.read().strip()
+with open(os.path.join(SECRETS_PATH, 'consumer_key'), 'r') as consumer_key_file:
+    consumer_key = consumer_key_file.read().strip()
+with open(os.path.join(SECRETS_PATH, 'consumer_secret'), 'r') as consumer_secret_file:
+    consumer_secret = consumer_secret_file.read().strip()
+with open(os.path.join(SECRETS_PATH, 'restlet_url'), 'r') as restlet_url_file:
+    restlet_url = restlet_url_file.read().strip()
 
 if not origin:
     raise ValueError('Origin is empty or None')
@@ -35,6 +45,16 @@ if not email:
     raise ValueError('Email is empty or None')
 if not password:
     raise ValueError('Password is empty or None')
+if not token_key:
+    raise ValueError('Token Key is empty or None')
+if not token_secret:
+    raise ValueError('Token Secret is empty or None')
+if not consumer_key:
+    raise ValueError('Consumer Key is empty or None')
+if not consumer_secret:
+    raise ValueError('Consumer Secret is empty or None')
+if not restlet_url:
+    raise ValueError('RESTlet URL is empty or None')
 
 print('got secrets')
 
