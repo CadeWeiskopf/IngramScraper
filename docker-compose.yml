@@ -3,11 +3,17 @@ services:
   ingram_py_scraper_service:
     image: ingram_scraper
     secrets:
-      - url
+      - origin
+      - login_url
+      - post_url
       - email
       - password
 secrets:
-  url:
+  origin:
+    external: true
+  login_url:
+    external: true
+  post_url:
     external: true
   email:
     external: true
