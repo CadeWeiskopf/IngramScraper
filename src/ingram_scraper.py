@@ -1,3 +1,4 @@
+import oauth2 as oauth
 import os
 import requests
 from selenium import webdriver
@@ -126,6 +127,8 @@ response = requests.post(
     data=data,
 )
 print(f'response {response.text}')
+
+print(f'SHA256 Signature method: {oauth.SignatureMethod_HMAC_SHA256()}')
 
 driver.quit()
 
