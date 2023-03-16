@@ -1,3 +1,4 @@
+import json
 import oauth2 as oauth
 import os
 import requests
@@ -204,6 +205,22 @@ response = requests.post(
     data=data,
 )
 print(f'response {len(response.text)}')
+response_json = json.loads(response.text.replace('\ufffd', ''))
+response_json = sorted(response_json, key=lambda x: str(x['col2']), reverse=True)
+new_leads = []
+exclude_columns = ['col1', 'col3', 'col37', 'col38', 'col39', 'col40']
+for row in response_json:
+    if row['col2'] == None:
+        continue
+    if row['col2'] in lead_ids:
+        continue
+    new_lead = {}
+    for col in row:
+        if col in exclude_columns:
+            continue
+        new_lead[col] = str(row[col])
+    print(f'new_lead: {new_lead}')
+    
 
 driver.quit()
 
