@@ -13,6 +13,7 @@ services:
       - consumer_key
       - consumer_secret
       - restlet_url
+      - ns_realm
 secrets:
   origin:
     external: true
@@ -33,4 +34,6 @@ secrets:
   consumer_secret:
     external: true
   restlet_url:
+    external: true
+  ns_realm:
     external: true

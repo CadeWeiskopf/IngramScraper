@@ -34,6 +34,8 @@ with open(os.path.join(SECRETS_PATH, 'consumer_secret'), 'r') as consumer_secret
     consumer_secret = consumer_secret_file.read().strip()
 with open(os.path.join(SECRETS_PATH, 'restlet_url'), 'r') as restlet_url_file:
     restlet_url = restlet_url_file.read().strip()
+with open(os.path.join(SECRETS_PATH, 'ns_realm'), 'r') as ns_realm_file:
+    ns_realm = ns_realm_file.read().strip()
 
 if not origin:
     raise ValueError('Origin is empty or None')
@@ -55,8 +57,63 @@ if not consumer_secret:
     raise ValueError('Consumer Secret is empty or None')
 if not restlet_url:
     raise ValueError('RESTlet URL is empty or None')
+if not ns_realm:
+    raise ValueError('NS Realm is empty or None')
 
 print('got secrets')
+
+# Get all current Lead IDs
+# these will be used to check for new lead ids
+
+# generates headers for get request
+def generate_get_request_url_and_headers(page_index):
+    url = f'{restlet_url}&index={page_index}'
+    token = oauth.Token(key=token_key, secret=token_secret)
+    consumer = oauth.Consumer(key=consumer_key, secret=consumer_secret)
+    realm = ns_realm
+    params = {
+        'oauth_version': '1.0',
+        'oauth_nonce': oauth.generate_nonce(),
+        'oauth_timestamp': str(int(time.time())),
+        'oauth_token': token.key,
+        'oauth_consumer_key': consumer.key
+    }
+    req = oauth.Request(method='GET', url=url, parameters=params)
+    signatureMethod = oauth.SignatureMethod_HMAC_SHA256()
+    req.sign_request(signatureMethod, consumer, token)
+    header = req.to_header(ns_realm)
+    headery = header['Authorization'].encode('ascii', 'ignore')
+    headerx = {'Authorization': headery, 'Content-Type':'application/json'}
+    return [url, headerx]
+
+# from the paged data get the Ingram PRM Lead IDs
+def extract_lead_id(data):
+    page_lead_ids = []
+    for row in data:
+        page_lead_ids.append(row['values']['custrecord_ingram_leadid'])
+    return page_lead_ids
+
+# this first section gets number of pages
+# and extracts data from first page
+url, headerx = generate_get_request_url_and_headers(0)
+conn = requests.get(url, headers=headerx)
+conn_json = conn.json()
+num_of_pages = len(conn_json['pagedData']['pageRanges'])
+print(f'{num_of_pages} pages')
+lead_ids = []
+leads_extension = extract_lead_id(conn_json['data'])
+lead_ids.extend(leads_extension)
+
+# then for [1, num_of_pages] repeat extracting data
+for i in range(1, num_of_pages):
+    print(f'(total: {len(lead_ids)}) + iterate page {i}')
+    url, headerx = generate_get_request_url_and_headers(i)
+    conn = requests.get(url, headers=headerx)
+    conn_json = conn.json()
+    leads_extension = extract_lead_id(conn_json['data'])
+    lead_ids.extend(leads_extension)
+
+print(f'length of lead_ids at start={len(lead_ids)}')
 
 # Initialize Driver
 chrome_options = webdriver.ChromeOptions()
@@ -146,9 +203,7 @@ response = requests.post(
     headers=headers,
     data=data,
 )
-print(f'response {response.text}')
-
-print(f'SHA256 Signature method: {oauth.SignatureMethod_HMAC_SHA256()}')
+print(f'response {len(response.text)}')
 
 driver.quit()
 
