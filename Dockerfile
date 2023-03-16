@@ -71,4 +71,4 @@ COPY src/ /app/
 RUN chown -R cade:cade /app
 USER cade
 
-CMD ["python", "ingram_scraper.py"]
+CMD ["python", "-u", "ingram_scraper.py"]

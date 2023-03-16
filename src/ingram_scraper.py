@@ -7,6 +7,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+import sys
 import time
 
 start_time = time.time()
@@ -71,7 +72,6 @@ def generate_get_request_url_and_headers(page_index):
     url = f'{restlet_url}&index={page_index}'
     token = oauth.Token(key=token_key, secret=token_secret)
     consumer = oauth.Consumer(key=consumer_key, secret=consumer_secret)
-    realm = ns_realm
     params = {
         'oauth_version': '1.0',
         'oauth_nonce': oauth.generate_nonce(),
@@ -87,6 +87,26 @@ def generate_get_request_url_and_headers(page_index):
     headerx = {'Authorization': headery, 'Content-Type':'application/json'}
     return [url, headerx]
 
+# generates headers for post request
+# used to post the new lead ids
+def generate_post_request_url_and_headers():
+    token = oauth.Token(key=token_key, secret=token_secret)
+    consumer = oauth.Consumer(key=consumer_key, secret=consumer_secret)
+    params = {
+        'oauth_version': '1.0',
+        'oauth_nonce': oauth.generate_nonce(),
+        'oauth_timestamp': str(int(time.time())),
+        'oauth_token': token.key,
+        'oauth_consumer_key': consumer.key
+    }
+    req = oauth.Request(method='POST', url=restlet_url, parameters=params)
+    signatureMethod = oauth.SignatureMethod_HMAC_SHA256()
+    req.sign_request(signatureMethod, consumer, token)
+    header = req.to_header(ns_realm)
+    headery = header['Authorization'].encode('ascii', 'ignore')
+    headerx = {'Authorization': headery, 'Content-Type':'application/json'}
+    return [restlet_url, headerx]
+
 # from the paged data get the Ingram PRM Lead IDs
 def extract_lead_id(data):
     page_lead_ids = []
@@ -94,135 +114,154 @@ def extract_lead_id(data):
         page_lead_ids.append(row['values']['custrecord_ingram_leadid'])
     return page_lead_ids
 
-# this first section gets number of pages
-# and extracts data from first page
-url, headerx = generate_get_request_url_and_headers(0)
-conn = requests.get(url, headers=headerx)
-conn_json = conn.json()
-num_of_pages = len(conn_json['pagedData']['pageRanges'])
-print(f'{num_of_pages} pages')
-lead_ids = []
-leads_extension = extract_lead_id(conn_json['data'])
-lead_ids.extend(leads_extension)
-
-# then for [1, num_of_pages] repeat extracting data
-for i in range(1, num_of_pages):
-    print(f'(total: {len(lead_ids)}) + iterate page {i}')
-    url, headerx = generate_get_request_url_and_headers(i)
+while True:
+    print('Taking a nap...')
+    time.sleep(300)
+    
+    # this first section gets number of pages
+    # and extracts data from first page
+    url, headerx = generate_get_request_url_and_headers(0)
     conn = requests.get(url, headers=headerx)
     conn_json = conn.json()
+    num_of_pages = len(conn_json['pagedData']['pageRanges'])
+    print(f'{num_of_pages} pages')
+    lead_ids = []
     leads_extension = extract_lead_id(conn_json['data'])
     lead_ids.extend(leads_extension)
 
-print(f'length of lead_ids at start={len(lead_ids)}')
+    # then for [1, num_of_pages] repeat extracting data
+    for i in range(1, num_of_pages):
+        print(f'(total: {len(lead_ids)}) + iterate page {i}')
+        url, headerx = generate_get_request_url_and_headers(i)
+        conn = requests.get(url, headers=headerx)
+        conn_json = conn.json()
+        leads_extension = extract_lead_id(conn_json['data'])
+        lead_ids.extend(leads_extension)
 
-# Initialize Driver
-chrome_options = webdriver.ChromeOptions()
-chrome_options.add_argument('--verbose')
-chrome_options.add_argument('--no-sandbox')
-chrome_options.add_argument('--window-size=1920,1080')
-chrome_options.add_argument('--headless')
-chrome_options.add_argument('--disable-gpu')
-chrome_options.add_argument('--disable-dev-shm-usage') 
-chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/111.0')
+    print(f'length of lead_ids at start={len(lead_ids)}')
 
-chrome_driver_service = Service('/usr/bin/chromedriver')
+    # Initialize Driver
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument('--verbose')
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--window-size=1920,1080')
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--disable-dev-shm-usage') 
+    chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/111.0')
 
-driver = webdriver.Chrome(service=chrome_driver_service, options=chrome_options)
+    chrome_driver_service = Service('/usr/bin/chromedriver')
 
-print('driver opened')
+    driver = webdriver.Chrome(service=chrome_driver_service, options=chrome_options)
 
-# Go to url & generate cookies
-driver.get(login_url)
+    print('driver opened')
 
-print('driver got url , waiting for elements')
+    # Go to url & generate cookies
+    driver.get(login_url)
 
-SECONDS_BEFORE_TIMEOUT = 60
+    print('driver got url , waiting for elements')
 
-email_element = WebDriverWait(driver, SECONDS_BEFORE_TIMEOUT).until(EC.element_to_be_clickable((By.NAME, 'email')))
-email_element.send_keys(email)
+    SECONDS_BEFORE_TIMEOUT = 600
 
-password_element = WebDriverWait(driver, SECONDS_BEFORE_TIMEOUT).until(EC.element_to_be_clickable((By.NAME, 'password')))
-password_element.send_keys(password)
+    email_element = WebDriverWait(driver, SECONDS_BEFORE_TIMEOUT).until(EC.element_to_be_clickable((By.NAME, 'email')))
+    email_element.send_keys(email)
 
-print('signing in')
-#submit_button = WebDriverWait(driver, SECONDS_BEFORE_TIMEOUT).until(EC.element_to_be_clickable((By.ID, 'idInputSubmit')))
-#submit_button.click()
-driver.execute_script("document.getElementById('idInputSubmit').click()")
-print('clicked sign in')
+    password_element = WebDriverWait(driver, SECONDS_BEFORE_TIMEOUT).until(EC.element_to_be_clickable((By.NAME, 'password')))
+    password_element.send_keys(password)
 
-leads_tab = WebDriverWait(driver, SECONDS_BEFORE_TIMEOUT).until(EC.presence_of_element_located((By.ID, "lead")))
+    print('signing in')
+    #submit_button = WebDriverWait(driver, SECONDS_BEFORE_TIMEOUT).until(EC.element_to_be_clickable((By.ID, 'idInputSubmit')))
+    #submit_button.click()
+    driver.execute_script("document.getElementById('idInputSubmit').click()")
+    print('clicked sign in')
 
-print('loaded, getting cookies')
+    leads_tab = WebDriverWait(driver, SECONDS_BEFORE_TIMEOUT).until(EC.presence_of_element_located((By.ID, "lead")))
 
-# build cookies
-cookies = {}
-for cookie in driver.get_cookies():
-    cookies[cookie['name']] = str(cookie['value'])
-headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/111.0',
-    'Accept': 'application/json, text/javascript, */*; q=0.01',
-    'Accept-Language': 'en-US,en;q=0.5',
-    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-    'X-Requested-With': 'XMLHttpRequest',
-    'Origin': origin,
-    'Connection': 'keep-alive',
-    'Referer': post_url,
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'same-origin',
-    'Pragma': 'no-cache',
-    'Cache-Control': 'no-cache',
-}
-params = {
-    'getResultsJSON': '',
-    'timestamp': [
-        int(time.time()),
-        int(time.time() + 300),
-    ],
-}
-data = {
-    'status': '-1',
-    'saleRepId': '-1',
-    'saleRep': '',
-    'isPaid': 'false',
-    'dateFrom': '',
-    'dateTo': '',
-    'source': '-1',
-    'activationEst': '-1',
-    'm2mEst': '-1',
-    'companySize': '',
-    'industry': '',
-}
+    print('loaded, getting cookies')
 
-# Get data
-print('posting')
-response = requests.post(
-    post_url,
-    params=params,
-    cookies=cookies,
-    headers=headers,
-    data=data,
-)
-print(f'response {len(response.text)}')
-response_json = json.loads(response.text.replace('\ufffd', ''))
-response_json = sorted(response_json, key=lambda x: str(x['col2']), reverse=True)
-new_leads = []
-exclude_columns = ['col1', 'col3', 'col37', 'col38', 'col39', 'col40']
-for row in response_json:
-    if row['col2'] == None:
-        continue
-    if row['col2'] in lead_ids:
-        continue
-    new_lead = {}
-    for col in row:
-        if col in exclude_columns:
+    # build cookies
+    cookies = {}
+    for cookie in driver.get_cookies():
+        cookies[cookie['name']] = str(cookie['value'])
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/111.0',
+        'Accept': 'application/json, text/javascript, */*; q=0.01',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Origin': origin,
+        'Connection': 'keep-alive',
+        'Referer': post_url,
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-origin',
+        'Pragma': 'no-cache',
+        'Cache-Control': 'no-cache',
+    }
+    params = {
+        'getResultsJSON': '',
+        'timestamp': [
+            int(time.time()),
+            int(time.time() + 300),
+        ],
+    }
+    data = {
+        'status': '-1',
+        'saleRepId': '-1',
+        'saleRep': '',
+        'isPaid': 'false',
+        'dateFrom': '',
+        'dateTo': '',
+        'source': '-1',
+        'activationEst': '-1',
+        'm2mEst': '-1',
+        'companySize': '',
+        'industry': '',
+    }
+
+    # Get data
+    print('posting')
+    response = requests.post(
+        post_url,
+        params=params,
+        cookies=cookies,
+        headers=headers,
+        data=data,
+    )
+    print(f'response {len(response.text)}')
+    response_json = json.loads(response.text.replace('\ufffd', ''))
+    response_json = sorted(response_json, key=lambda x: str(x['col2']), reverse=True)
+    new_leads = []
+    exclude_columns = ['col1', 'col3', 'col37', 'col38', 'col39', 'col40']
+    for row in response_json:
+        if len(new_leads) >= 200:
+            # TODO: do this better
+            # to prevent char limits for MapReduce param
+            # ^ refers to NetSuite backend process going from RESTlet->MapReduce
+            break
+        if row['col2'] == None:
             continue
-        new_lead[col] = str(row[col])
-    print(f'new_lead: {new_lead}')
-    
+        if row['col2'] in lead_ids:
+            continue
+        new_lead = {}
+        for col in row:
+            if col in exclude_columns:
+                continue
+            new_lead[col] = str(row[col])
+        print(f'new_lead: {new_lead}')
+        new_leads.append(new_lead)
+        
+    if len(new_leads) <= 0:
+        print ('no new leads')
+        continue
 
-driver.quit()
+    url, headerx = generate_post_request_url_and_headers()
+    ns_payload = {'leads': new_leads}
+    #print(f'ns_payload: {ns_payload}')
+    conn = requests.post(url=url, headers=headerx, data=json.dumps(ns_payload).encode(encoding='utf-8'))
+    print(conn.text)
 
-end_time = time.time()
-print(f'complete time: {end_time - start_time}')
+    driver.quit()
+
+    end_time = time.time()
+    print(f'complete time: {end_time - start_time}')
