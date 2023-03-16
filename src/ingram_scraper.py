@@ -127,6 +127,7 @@ while True:
     print(f'{num_of_pages} pages')
     lead_ids = []
     leads_extension = extract_lead_id(conn_json['data'])
+    conn.close()
     lead_ids.extend(leads_extension)
 
     # then for [1, num_of_pages] repeat extracting data
@@ -136,6 +137,7 @@ while True:
         conn = requests.get(url, headers=headerx)
         conn_json = conn.json()
         leads_extension = extract_lead_id(conn_json['data'])
+        conn.close()
         lead_ids.extend(leads_extension)
 
     print(f'length of lead_ids at start={len(lead_ids)}')
@@ -260,6 +262,7 @@ while True:
     #print(f'ns_payload: {ns_payload}')
     conn = requests.post(url=url, headers=headerx, data=json.dumps(ns_payload).encode(encoding='utf-8'))
     print(conn.text)
+    conn.close()
 
     driver.quit()
 
