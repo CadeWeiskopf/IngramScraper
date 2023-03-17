@@ -10,9 +10,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 import sys
 import time
 
-start_time = time.time()
-print(f'start {start_time}')
-
 # Get Secrets
 SECRETS_PATH = '/run/secrets/'
 
@@ -110,10 +107,13 @@ def extract_lead_id(data):
         page_lead_ids.append(row['values']['custrecord_ingram_leadid'])
     return page_lead_ids
 
+MAIN_LOOP_SLEEP_TIME = 300
+
 # main loop
 while True:
     print('Taking a nap...')
-    time.sleep(300)
+    time.sleep(MAIN_LOOP_SLEEP_TIME)
+    start_time = time.time()
     
     # Get all current Lead IDs (used to check for new lead ids)
     # this section gets number of pages + data from the first page
@@ -129,7 +129,7 @@ while True:
 
     # then for [1, num_of_pages] repeat extracting data
     for i in range(1, num_of_pages):
-        print(f'(total: {len(lead_ids)}) + iterate page {i}')
+        #print(f'(total: {len(lead_ids)}) + iterate page {i}')
         url, headerx = generate_get_request_url_and_headers(i)
         conn = requests.get(url, headers=headerx)
         conn_json = conn.json()
@@ -247,9 +247,11 @@ while True:
             if col in exclude_columns:
                 continue
             new_lead[col] = str(row[col])
-        print(f'new_lead: {new_lead}')
+        print(f'new_lead: {new_lead['col2']}')
         new_leads.append(new_lead)
         
+    driver.quit()
+
     if len(new_leads) <= 0:
         print ('no new leads')
         continue
@@ -261,7 +263,5 @@ while True:
     print(conn.text)
     conn.close()
 
-    driver.quit()
-
     end_time = time.time()
-    print(f'complete time: {end_time - start_time}')
+    print(f'complete iteration time: {end_time - start_time}')
