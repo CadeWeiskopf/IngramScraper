@@ -64,10 +64,7 @@ if not ns_realm:
 
 print('got secrets')
 
-# Get all current Lead IDs
-# these will be used to check for new lead ids
-
-# generates headers for get request
+# used to get existing lead ids in ns
 def generate_get_request_url_and_headers(page_index):
     url = f'{restlet_url}&index={page_index}'
     token = oauth.Token(key=token_key, secret=token_secret)
@@ -87,7 +84,6 @@ def generate_get_request_url_and_headers(page_index):
     headerx = {'Authorization': headery, 'Content-Type':'application/json'}
     return [url, headerx]
 
-# generates headers for post request
 # used to post the new lead ids
 def generate_post_request_url_and_headers():
     token = oauth.Token(key=token_key, secret=token_secret)
@@ -107,19 +103,20 @@ def generate_post_request_url_and_headers():
     headerx = {'Authorization': headery, 'Content-Type':'application/json'}
     return [restlet_url, headerx]
 
-# from the paged data get the Ingram PRM Lead IDs
+#  get the Ingram PRM Lead IDs from a page of data
 def extract_lead_id(data):
     page_lead_ids = []
     for row in data:
         page_lead_ids.append(row['values']['custrecord_ingram_leadid'])
     return page_lead_ids
 
+# main loop
 while True:
     print('Taking a nap...')
     time.sleep(300)
     
-    # this first section gets number of pages
-    # and extracts data from first page
+    # Get all current Lead IDs (used to check for new lead ids)
+    # this section gets number of pages + data from the first page
     url, headerx = generate_get_request_url_and_headers(0)
     conn = requests.get(url, headers=headerx)
     conn_json = conn.json()
