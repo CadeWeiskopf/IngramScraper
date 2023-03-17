@@ -247,7 +247,7 @@ while True:
             if col in exclude_columns:
                 continue
             new_lead[col] = str(row[col])
-        print(f'new_lead: {new_lead['col2']}')
+        print(f"new_lead: {new_lead['col2']}")
         new_leads.append(new_lead)
         
     driver.quit()
